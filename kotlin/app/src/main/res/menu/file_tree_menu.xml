@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view"
+>
+    <item android:title="Files" android:id="@+id/files_list">
+        <menu>
+            <item
+                android:title="Placeholder 1"
+                android:id="@+id/placeholder_1"
+                android:icon="@drawable/ic_folder"
+            />
+            <item
+                android:title="Placeholder 2"
+                android:id="@+id/placeholder_2"
+                android:icon="@drawable/ic_file"
+            />
+
+        </menu>
+    </item>
+
+</menu>
