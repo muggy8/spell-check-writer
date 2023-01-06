@@ -7,9 +7,16 @@ import android.view.MenuItem
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
+import androidx.core.view.get
+import androidx.core.view.isEmpty
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
+import java.nio.file.Path
 import java.util.Random
+import kotlin.io.path.Path
+import kotlin.io.path.isDirectory
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
     private lateinit var primaryToolbar:Toolbar
@@ -55,7 +62,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     fun buildFilesMenu(filesDrawer: NavigationView){
         val sideBarMenu = filesDrawer.menu
         val filesListMenu = sideBarMenu.findItem(R.id.files_list).subMenu
-        val placeholderTest = FilesListItem("Testing test 123")
+
+        val placeholderTest = DirectoryList(getApplicationInfo().dataDir)
         placeholderTest.renderToMenu(filesListMenu)
     }
 
@@ -64,7 +72,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 }
 
-class FilesListItem(var name: String) {
+class FilesListItem<T>(var name: String, var payload:T? = null) {
     var id: Int
     private var _type: String = "file"
     private var rng = Random()
@@ -103,5 +111,45 @@ class FilesListItem(var name: String) {
 
     fun removeFromMenu(menu: Menu){
         menu.removeItem(id)
+    }
+}
+
+class DirectoryList(pathName: String = "") {
+    private var contents = mutableListOf<FilesListItem<Path>>()
+    private var path: Path
+
+    init {
+        path = Path(pathName)
+        updatePath(pathName)
+    }
+
+    fun updatePath(pathName: String){
+        path = Path(pathName)
+        if (!path.isDirectory()){
+            throw Error("Path is not a directory")
+        }
+        val directoryContents = path.listDirectoryEntries()
+        contents.clear()
+        for (item in directoryContents){
+            val listing = FilesListItem(item.name, item)
+            contents.add(listing)
+            if (item.isDirectory()){
+                listing.type = "folder"
+            }
+            else{
+                listing.type = "file"
+            }
+        }
+    }
+
+    fun renderToMenu(menu: Menu){
+        while (!menu.isEmpty()){
+            val forRemoval = menu.get(0)
+            menu.removeItem(forRemoval.itemId)
+        }
+
+        for (item in contents){
+            item.renderToMenu(menu)
+        }
     }
 }
