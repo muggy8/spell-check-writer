@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 }
 
-class FilesListItem {
+class FilesListItem(var name: String) {
     var id: Int
     private var _type: String = "file"
     private var rng = Random()
@@ -74,12 +74,10 @@ class FilesListItem {
             }
             _type = newType
         }
-    var name: String
     var onClick = fun(){}
 
-    constructor(name:String) {
+    init {
         id = rng.nextInt()
-        this.name = name
     }
 
     fun renderToMenu(menu: Menu){
