@@ -37,7 +37,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         mainAppView.addDrawerListener(filesListToggle)
         filesListToggle.syncState()
 
-        buildFilesMenu(filesDrawer)
+        filesDrawer.setNavigationItemSelectedListener(this)
+
+        if (savedInstanceState === null){
+            buildFilesMenu(filesDrawer)
+        }
     }
 
     override fun onBackPressed() {
