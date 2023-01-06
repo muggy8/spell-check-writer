@@ -8,12 +8,12 @@
         <menu>
             <item
                 android:title="Placeholder 1"
-                android:id="@+id/placeholder_1"
+                android:id="@+id/placeholder_folder"
                 android:icon="@drawable/ic_folder"
             />
             <item
                 android:title="Placeholder 2"
-                android:id="@+id/placeholder_2"
+                android:id="@+id/placeholder_file"
                 android:icon="@drawable/ic_file"
             />
 
