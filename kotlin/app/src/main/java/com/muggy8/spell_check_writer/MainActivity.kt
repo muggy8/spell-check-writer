@@ -1,5 +1,6 @@
 package com.muggy8.spell_check_writer
 
+import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
@@ -69,6 +70,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onNavigationItemSelected(menuItem: MenuItem): Boolean {
+        directoryListing.menuClicked(this, menuItem)
         return true
     }
 }
@@ -167,6 +169,19 @@ class DirectoryList(pathName: String = "") {
     fun removeFromMenu(menu: Menu){
         for (item in contents){
             item.removeFromMenu(menu)
+        }
+    }
+
+    fun menuClicked(context: Context, menuItem: MenuItem){
+        val menuItemId = menuItem.itemId
+        for(item in contents){
+//            println("item.id: ${item.id} == menuItemId: ${menuItemId} => ${item.id == menuItemId}")
+            if (item.id == menuItemId){
+                if (item.onClick !== null){
+                    item.onClick()
+                }
+                return
+            }
         }
     }
 }
