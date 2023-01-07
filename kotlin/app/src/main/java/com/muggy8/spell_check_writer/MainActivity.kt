@@ -65,6 +65,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val sideBarMenu = filesDrawer.menu
         val filesListMenu = sideBarMenu.findItem(R.id.files_list).subMenu
 
+        println("applicationInfo.dataDir: ${applicationInfo.dataDir}")
         directoryListing = DirectoryList(applicationInfo.dataDir)
         directoryListing.renderToMenu(filesListMenu)
     }
@@ -83,8 +84,8 @@ class FilesListItem<T>(var name: String, var payload:T? = null) {
         get() {
             return _type
         }
-        set(newType:String) {
-            if (newType !== "file" || newType !== "folder"){
+        set(newType) {
+            if (newType != "file" && newType != "folder"){
                 return
             }
             _type = newType
@@ -146,6 +147,7 @@ class DirectoryList(pathName: String = "") {
         for (item in directoryContents){
             val listing = FilesListItem(item.name, item)
             contents.add(listing)
+
             if (item.isDirectory()){
                 listing.type = "folder"
             }
