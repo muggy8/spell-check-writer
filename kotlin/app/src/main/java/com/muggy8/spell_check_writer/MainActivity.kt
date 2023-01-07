@@ -59,12 +59,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onBackPressed()
     }
 
+    private lateinit var directoryListing: DirectoryList
     fun buildFilesMenu(filesDrawer: NavigationView){
         val sideBarMenu = filesDrawer.menu
         val filesListMenu = sideBarMenu.findItem(R.id.files_list).subMenu
 
-        val placeholderTest = DirectoryList(getApplicationInfo().dataDir)
-        placeholderTest.renderToMenu(filesListMenu)
+        directoryListing = DirectoryList(applicationInfo.dataDir)
+        directoryListing.renderToMenu(filesListMenu)
     }
 
     override fun onNavigationItemSelected(menuItem: MenuItem): Boolean {
@@ -120,11 +121,21 @@ class DirectoryList(pathName: String = "") {
 
     init {
         path = Path(pathName)
-        updatePath(pathName)
+        if (pathName !== ""){
+            updatePath(pathName)
+        }
     }
 
-    fun updatePath(pathName: String){
+    constructor(path:Path):this(){
+        updatePath(path)
+    }
+
+    fun updatePath(pathName:String){
         path = Path(pathName)
+        updatePath(path)
+    }
+
+    fun updatePath(path: Path){
         if (!path.isDirectory()){
             throw Error("Path is not a directory")
         }
@@ -150,6 +161,12 @@ class DirectoryList(pathName: String = "") {
 
         for (item in contents){
             item.renderToMenu(menu)
+        }
+    }
+
+    fun removeFromMenu(menu: Menu){
+        for (item in contents){
+            item.removeFromMenu(menu)
         }
     }
 }
