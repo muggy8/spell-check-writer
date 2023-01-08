@@ -10,10 +10,7 @@ import androidx.core.view.isEmpty
 import androidx.documentfile.provider.DocumentFile
 import java.nio.file.Path
 import java.util.*
-import kotlin.io.path.Path
-import kotlin.io.path.isDirectory
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
+import kotlin.io.path.*
 
 class FilesListItem() {
     var id: Int
@@ -158,6 +155,10 @@ class DirectoryList(private var mainActivity: MainActivity) {
             val listing = FilesListItem(item.name)
             if (item.isDirectory()){
                 listing.iconRes = R.drawable.ic_folder
+                listing.onClick = fun(){
+                    updatePath(item.pathString)
+                    renderToMenu()
+                }
             }
             else{
                 listing.iconRes = R.drawable.ic_file
