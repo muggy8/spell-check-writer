@@ -22,7 +22,6 @@ import androidx.core.view.get
 import androidx.core.view.isEmpty
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
-import java.io.File
 import java.nio.file.Path
 import java.util.Random
 import kotlin.io.path.Path
@@ -87,14 +86,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             FilesListItem(R.string.add_file)
         )
 
-        buildOpenFolder()
+        rebuildOpenFolder()
 
         directoryListing.renderToMenu(filesListMenu)
     }
 
     private lateinit var openFolderButton:FilesListItem
     private lateinit var requestForStoragePermissionButton:FilesListItem
-    private fun buildOpenFolder(){
+    private fun rebuildOpenFolder(){
         println("building open folder buton")
         if (permissionChecker.hasFileAccessPermission()){
             if (! ::openFolderButton.isInitialized){
@@ -140,7 +139,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         permissionChecker.onActivityResult(requestCode, resultCode, data)
-        buildOpenFolder()
+        rebuildOpenFolder()
         directoryListing.renderToMenu(filesListMenu)
         super.onActivityResult(requestCode, resultCode, data)
     }
@@ -151,9 +150,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         grantResults: IntArray
     ) {
         permissionChecker.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        buildOpenFolder()
+        rebuildOpenFolder()
         directoryListing.renderToMenu(filesListMenu)
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        if (hasFocus){
+            rebuildOpenFolder()
+            directoryListing.renderToMenu(filesListMenu)
+        }
+        super.onWindowFocusChanged(hasFocus)
     }
 }
 
