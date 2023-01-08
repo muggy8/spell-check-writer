@@ -94,7 +94,9 @@ class DirectoryList(private var mainActivity: MainActivity) {
     fun updatePathFromFiletreeUri(uri: Uri){
         // manage the back button
         if (historicStateRenderer.size > 0){
-            renderedAboveDirectoryContents.add(0, backFolderButton)
+            if(!renderedAboveDirectoryContents.contains(backFolderButton)){
+                renderedAboveDirectoryContents.add(0, backFolderButton)
+            }
         }
         else if (renderedAboveDirectoryContents.isNotEmpty()){
             renderedAboveDirectoryContents.remove(backFolderButton)
@@ -107,15 +109,19 @@ class DirectoryList(private var mainActivity: MainActivity) {
         // actually figure out what the heck is in the folder and render it
         val documentFile = DocumentFile.fromTreeUri(mainActivity, uri)
         val directoryContents = documentFile!!.listFiles()
+        println("Reading ${uri}")
+        println("got contents for  ${documentFile.uri}")
         this.directoryContents.clear()
         for (item in directoryContents){
-
+            println("Adding to list ${item.uri}")
             val listing = FilesListItem()
             listing.name = item.name
             if (item.isDirectory()){
                 listing.iconRes = R.drawable.ic_folder
                 listing.onClick = fun (){
-
+                    println("Navigating to ${item.uri}")
+                    updatePathFromFiletreeUri(item.uri)
+                    renderToMenu()
                 }
             }
             else{
@@ -138,7 +144,9 @@ class DirectoryList(private var mainActivity: MainActivity) {
 
         // manage the back button
         if (historicStateRenderer.size > 0){
-            renderedAboveDirectoryContents.add(0, backFolderButton)
+            if(!renderedAboveDirectoryContents.contains(backFolderButton)){
+                renderedAboveDirectoryContents.add(0, backFolderButton)
+            }
         }
         else if (renderedAboveDirectoryContents.isNotEmpty()){
             renderedAboveDirectoryContents.remove(backFolderButton)
@@ -193,7 +201,7 @@ class DirectoryList(private var mainActivity: MainActivity) {
                 }
                 renderToMenu(menuPreviouslyRenderedTo!!)
             },
-            251
+            301
         )
 
     }
