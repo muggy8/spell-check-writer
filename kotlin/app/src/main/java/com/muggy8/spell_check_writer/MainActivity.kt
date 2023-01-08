@@ -126,7 +126,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        permissionChecker.onActivityResult(requestCode, resultCode, data)
         rebuildOpenFolder()
         directoryListing.renderToMenu(filesListMenu)
         super.onActivityResult(requestCode, resultCode, data)
@@ -137,7 +136,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
-        permissionChecker.onRequestPermissionsResult(requestCode, permissions, grantResults)
         rebuildOpenFolder()
         directoryListing.renderToMenu(filesListMenu)
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
