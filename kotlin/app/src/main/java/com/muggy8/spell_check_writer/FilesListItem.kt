@@ -2,6 +2,7 @@ package com.muggy8.spell_check_writer
 
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Handler
 import android.view.Menu
 import android.view.MenuItem
 import androidx.core.view.get
@@ -94,7 +95,6 @@ class DirectoryList(private var mainActivity: MainActivity) {
     }
 
     fun updatePathFromFiletreeUri(uri: Uri){
-        println("rendering uri: ${uri}")
         // manage the back button
         if (historicStateRenderer.size > 0){
             renderedAboveDirectoryContents.add(0, backFolderButton)
@@ -139,7 +139,6 @@ class DirectoryList(private var mainActivity: MainActivity) {
             throw Error("Path is not a directory")
         }
 
-        println("rendering path: ${path}")
         // manage the back button
         if (historicStateRenderer.size > 0){
             renderedAboveDirectoryContents.add(0, backFolderButton)
@@ -149,7 +148,6 @@ class DirectoryList(private var mainActivity: MainActivity) {
         }
 
         historicStateRenderer.add(fun() {
-            println("reverting to state located at ${path}")
             updatePath(path.toString())
         })
 
@@ -179,7 +177,6 @@ class DirectoryList(private var mainActivity: MainActivity) {
             item.renderToMenu(menu)
         }
         for (item in directoryContents){
-            println("adding to menu: ${item.name}")
             item.renderToMenu(menu)
         }
         for (item in renderedBelowDirectoryContents){
@@ -188,16 +185,22 @@ class DirectoryList(private var mainActivity: MainActivity) {
     }
 
     fun renderToMenu(){
-        mainActivity.renderMenu()
+        Handler().postDelayed(
+            fun(){
+                if (menuPreviouslyRenderedTo == null){
+                    return
+                }
+                renderToMenu(menuPreviouslyRenderedTo!!)
+            },
+            251
+        )
+
     }
 
     fun clearMenu(menu: Menu){
-        println("cleaning menu")
-
         while (!menu.isEmpty()){
             val forRemoval = menu.get(0)
             menu.removeItem(forRemoval.itemId)
-            println("forRemoval: ${forRemoval}")
         }
     }
 

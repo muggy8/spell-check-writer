@@ -153,7 +153,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onWindowFocusChanged(hasFocus)
     }
 
-    fun renderMenu(){
+    private fun renderMenu(){
         if (! ::filesListMenu.isInitialized){
             return
         }
