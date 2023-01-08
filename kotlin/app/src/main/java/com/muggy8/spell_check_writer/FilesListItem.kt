@@ -56,7 +56,7 @@ class FilesListItem() {
             if (iconRes != null){
                 menuItem.setIcon(iconRes as Int)
             }
-            if (iconRes != null){
+            else if (icon != null){
                 menuItem.setIcon(icon)
             }
         }
@@ -91,14 +91,14 @@ class DirectoryList(private var path: Path = Path("")) {
         this.directoryContents.clear()
         for (item in directoryContents){
             val listing = FilesListItem(item.name)
-            this.directoryContents.add(listing)
-
             if (item.isDirectory()){
                 listing.iconRes = R.drawable.ic_folder
             }
             else{
                 listing.iconRes = R.drawable.ic_file
             }
+
+            this.directoryContents.add(listing)
         }
     }
 
