@@ -3,4 +3,11 @@
 
     <string name="open_files_drawer">Open Files Drawer</string>
     <string name="close_files_drawer">Close Files Drawer</string>
+    <string name="storage_permission_required">Storage Permission Required</string>
+    <string name="manage_storage_permission_required">Manage Storage Permission Required</string>
+    <string name="add_file">Add New Folder</string>
+    <string name="add_folder">Add New File</string>
+    <string name="open_folder">Open Folder</string>
+    <string name="grant_storage_permission">Grant Permission To Access Storage</string>
+    <string name="grant_manage_storage_permission">Grant Manage Storage Permission</string>
 </resources>

@@ -1,9 +1,9 @@
 package com.muggy8.spell_check_writer
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +12,7 @@ import android.os.Environment
 import android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
 import android.view.Menu
 import android.view.MenuItem
+import android.view.SubMenu
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
@@ -21,6 +22,7 @@ import androidx.core.view.get
 import androidx.core.view.isEmpty
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
+import java.io.File
 import java.nio.file.Path
 import java.util.Random
 import kotlin.io.path.Path
@@ -71,60 +73,136 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private lateinit var directoryListing: DirectoryList
-    fun buildFilesMenu(filesDrawer: NavigationView){
+    private lateinit var filesListMenu: SubMenu
+    private fun buildFilesMenu(filesDrawer: NavigationView){
         val sideBarMenu = filesDrawer.menu
-        val filesListMenu = sideBarMenu.findItem(R.id.files_list).subMenu
+        filesListMenu = sideBarMenu.findItem(R.id.files_list).subMenu
 
         println("applicationInfo.dataDir: ${applicationInfo.dataDir}")
         directoryListing = DirectoryList(applicationInfo.dataDir)
+        directoryListing.renderedBelowDirectoryContents.add(
+            FilesListItem(R.string.add_folder)
+        )
+        directoryListing.renderedBelowDirectoryContents.add(
+            FilesListItem(R.string.add_file)
+        )
+
+        buildOpenFolder()
+
         directoryListing.renderToMenu(filesListMenu)
     }
 
+    private lateinit var openFolderButton:FilesListItem
+    private lateinit var requestForStoragePermissionButton:FilesListItem
+    private fun buildOpenFolder(){
+        println("building open folder buton")
+        if (permissionChecker.hasFileAccessPermission()){
+            if (! ::openFolderButton.isInitialized){
+                openFolderButton = FilesListItem(R.string.open_folder)
+                directoryListing.renderedBelowDirectoryContents.add(
+                    openFolderButton
+                )
+            }
+            if (::requestForStoragePermissionButton.isInitialized){
+                directoryListing.renderedBelowDirectoryContents.remove(
+                    requestForStoragePermissionButton
+                )
+            }
+        }
+        else {
+            if (::openFolderButton.isInitialized){
+                directoryListing.renderedBelowDirectoryContents.remove(
+                    openFolderButton
+                )
+            }
+            if (::requestForStoragePermissionButton.isInitialized){
+                requestForStoragePermissionButton.nameRes = permissionChecker.requestPermissionLabelTextRes()
+            }
+            else{
+                requestForStoragePermissionButton = FilesListItem(
+                    permissionChecker.requestPermissionLabelTextRes()
+                )
+                requestForStoragePermissionButton.onClick = fun (){
+                    permissionChecker.requestFileAccessPermission()
+                }
+
+                directoryListing.renderedBelowDirectoryContents.add(
+                    requestForStoragePermissionButton
+                )
+            }
+        }
+    }
+
     override fun onNavigationItemSelected(menuItem: MenuItem): Boolean {
-        directoryListing.menuClicked(this, menuItem)
+        directoryListing.menuClicked(menuItem)
         return true
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         permissionChecker.onActivityResult(requestCode, resultCode, data)
+        buildOpenFolder()
+        directoryListing.renderToMenu(filesListMenu)
         super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        permissionChecker.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        buildOpenFolder()
+        directoryListing.renderToMenu(filesListMenu)
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 }
 
-class FilesListItem<T>(var name: String, var payload:T? = null) {
+class FilesListItem() {
     var id: Int
-    private var _type: String = "file"
     private var rng = Random()
-    var type: String
-        get() {
-            return _type
-        }
-        set(newType) {
-            if (newType != "file" && newType != "folder"){
-                return
-            }
-            _type = newType
-        }
     var onClick = fun(){}
 
     init {
         id = rng.nextInt()
     }
 
+    var name:String? = null
+    var nameRes:Int? = null
+    constructor(name:String):this(){
+        this.name = name
+    }
+    constructor(nameRes:Int):this(){
+        this.nameRes = nameRes
+    }
+
+    var icon:Drawable? = null
+    var iconRes:Int? = null
     fun renderToMenu(menu: Menu){
         val menuSize = menu.size()
-        val menuItem = menu.add(
-            1,
-            id,
-            menuSize,
-            name
-        )
-
-        if (type === "folder"){
-            menuItem.setIcon(R.drawable.ic_folder)
+        var menuItem:MenuItem? = null
+        if (name != null){
+            menuItem = menu.add(
+                1,
+                id,
+                menuSize,
+                name as String
+            )
         }
-        else {
-            menuItem.setIcon(R.drawable.ic_file)
+        else if (nameRes != null){
+            menuItem = menu.add(
+                1,
+                id,
+                menuSize,
+                nameRes as Int
+            )
+        }
+        if (menuItem != null){
+            if (iconRes != null){
+                menuItem.setIcon(iconRes as Int)
+            }
+            if (iconRes != null){
+                menuItem.setIcon(icon)
+            }
         }
     }
 
@@ -133,20 +211,16 @@ class FilesListItem<T>(var name: String, var payload:T? = null) {
     }
 }
 
-class DirectoryList(pathName: String = "") {
-    private var contents = mutableListOf<FilesListItem<Path>>()
-    private var path: Path
+class DirectoryList(private var path: Path = Path("")) {
+    private var directoryContents = mutableListOf<FilesListItem>()
+    var renderedAboveDirectoryContents = mutableListOf<FilesListItem>()
+    var renderedBelowDirectoryContents = mutableListOf<FilesListItem>()
 
     init {
-        path = Path(pathName)
-        if (pathName !== ""){
-            updatePath(pathName)
-        }
-    }
-
-    constructor(path:Path):this(){
         updatePath(path)
     }
+
+    constructor(pathName:String):this(Path(pathName))
 
     fun updatePath(pathName:String){
         path = Path(pathName)
@@ -158,45 +232,56 @@ class DirectoryList(pathName: String = "") {
             throw Error("Path is not a directory")
         }
         val directoryContents = path.listDirectoryEntries()
-        contents.clear()
+        this.directoryContents.clear()
         for (item in directoryContents){
-            val listing = FilesListItem(item.name, item)
-            contents.add(listing)
+            val listing = FilesListItem(item.name)
+            this.directoryContents.add(listing)
 
             if (item.isDirectory()){
-                listing.type = "folder"
+                listing.iconRes = R.drawable.ic_folder
             }
             else{
-                listing.type = "file"
+                listing.iconRes = R.drawable.ic_file
             }
         }
     }
 
     fun renderToMenu(menu: Menu){
-        while (!menu.isEmpty()){
-            val forRemoval = menu.get(0)
-            menu.removeItem(forRemoval.itemId)
+        clearMenu(menu)
+        for (item in renderedAboveDirectoryContents){
+            item.renderToMenu(menu)
         }
-
-        for (item in contents){
+        for (item in directoryContents){
+            item.renderToMenu(menu)
+        }
+        for (item in renderedBelowDirectoryContents){
             item.renderToMenu(menu)
         }
     }
 
+    fun clearMenu(menu: Menu){
+        while (!menu.isEmpty()){
+            val forRemoval = menu.get(0)
+            menu.removeItem(forRemoval.itemId)
+        }
+    }
+
     fun removeFromMenu(menu: Menu){
-        for (item in contents){
+        for (item in directoryContents){
             item.removeFromMenu(menu)
         }
     }
 
-    fun menuClicked(context: Context, menuItem: MenuItem){
+    fun menuClicked(menuItem: MenuItem){
         val menuItemId = menuItem.itemId
-        for(item in contents){
+        var allReneredItems = mutableListOf<FilesListItem>()
+        allReneredItems.addAll(directoryContents)
+        allReneredItems.addAll(renderedBelowDirectoryContents)
+        allReneredItems.addAll(renderedAboveDirectoryContents)
+        for(item in allReneredItems){
 //            println("item.id: ${item.id} == menuItemId: ${menuItemId} => ${item.id == menuItemId}")
             if (item.id == menuItemId){
-                if (item.onClick !== null){
-                    item.onClick()
-                }
+                item.onClick()
                 return
             }
         }
@@ -269,7 +354,21 @@ class PermssionController (val context: AppCompatActivity) {
         }
     }
 
+
+    fun requestPermissionLabelTextRes():Int{
+        if (hasFileAccessPermission()){
+            throw Error("Permission already granted")
+        }
+        if (missingPermissions.isEmpty()){
+            return R.string.grant_manage_storage_permission
+        }
+        return R.string.grant_storage_permission
+    }
+
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+
+    }
+    fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
 
     }
 }
