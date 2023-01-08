@@ -1,15 +1,22 @@
 package com.muggy8.spell_check_writer
 
+import android.R.attr.data
+import android.content.Context
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.SubMenu
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
+import java.io.File
+
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
     private lateinit var primaryToolbar:Toolbar
@@ -81,6 +88,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private lateinit var openFolderButton:FilesListItem
     private lateinit var requestForStoragePermissionButton:FilesListItem
+    private val pickFolder = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()){
+        println("uri: ${it}")
+        println("path: ${it.path}")
+        println("authority: ${it.authority}")
+        println("host: ${it.host}")
+        println("fragment: ${it.fragment}")
+        println("pathSegments: ${it.pathSegments}")
+        println("lastPathSegment: ${it.lastPathSegment}")
+
+//        println("realPath: ${RealPathUtil.getRealPath(this, )}")
+
+//        if (it.path != null){
+//            directoryListing.updatePath(it.path as String)
+//        }
+    }
+
     private fun rebuildOpenFolder(){
         println("building open folder buton")
         if (permissionChecker.hasFileAccessPermission()){
@@ -89,6 +112,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 directoryListing.renderedBelowDirectoryContents.add(
                     openFolderButton
                 )
+                openFolderButton.onClick = fun(){
+                    pickFolder.launch(Uri.EMPTY)
+                }
             }
             if (::requestForStoragePermissionButton.isInitialized){
                 directoryListing.renderedBelowDirectoryContents.remove(
@@ -126,6 +152,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        println("requestCode: ${requestCode}, resultCode: ${resultCode}, data: ${data}")
         rebuildOpenFolder()
         directoryListing.renderToMenu(filesListMenu)
         super.onActivityResult(requestCode, resultCode, data)
