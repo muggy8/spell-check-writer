@@ -1,6 +1,5 @@
 package com.muggy8.spell_check_writer
 
-import android.content.Context
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.view.Menu
@@ -14,7 +13,6 @@ import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
-
 
 class FilesListItem() {
     var id: Int
@@ -70,24 +68,47 @@ class FilesListItem() {
     }
 }
 
-class DirectoryList(private var path: Path = Path("")) {
+class DirectoryList(private var mainActivity: MainActivity) {
     private var directoryContents = mutableListOf<FilesListItem>()
     var renderedAboveDirectoryContents = mutableListOf<FilesListItem>()
     var renderedBelowDirectoryContents = mutableListOf<FilesListItem>()
+    private val historicStateRenderer = mutableListOf<()->Unit>()
+    private var backFolderButton = FilesListItem()
 
     init {
-        updatePath(path)
+        backFolderButton.nameRes = R.string.back_folder
+        backFolderButton.iconRes = R.drawable.ic_back_folder
+        backFolderButton.onClick = fun(){
+            if (historicStateRenderer.isEmpty()){
+                return
+            }
+
+            val currentStateRenderer = historicStateRenderer.last()
+            historicStateRenderer.remove(currentStateRenderer)
+
+            val previousStateRenderer = historicStateRenderer.last()
+            historicStateRenderer.remove(previousStateRenderer)
+            previousStateRenderer()
+            renderToMenu()
+        }
     }
 
-    constructor(pathName:String):this(Path(pathName))
+    fun updatePathFromFiletreeUri(uri: Uri){
+        println("rendering uri: ${uri}")
+        // manage the back button
+        if (historicStateRenderer.size > 0){
+            renderedAboveDirectoryContents.add(0, backFolderButton)
+        }
+        else if (renderedAboveDirectoryContents.isNotEmpty()){
+            renderedAboveDirectoryContents.remove(backFolderButton)
+        }
 
-    fun updatePath(pathName:String){
-        path = Path(pathName)
-        updatePath(path)
-    }
+        historicStateRenderer.add(fun() {
+            updatePathFromFiletreeUri(uri)
+        })
 
-    fun updatePathFromFiletreeUri(context: Context, uri: Uri){
-        val documentFile = DocumentFile.fromTreeUri(context, uri)
+        // actually figure out what the heck is in the folder and render it
+        val documentFile = DocumentFile.fromTreeUri(mainActivity, uri)
         val directoryContents = documentFile!!.listFiles()
         this.directoryContents.clear()
         for (item in directoryContents){
@@ -96,6 +117,9 @@ class DirectoryList(private var path: Path = Path("")) {
             listing.name = item.name
             if (item.isDirectory()){
                 listing.iconRes = R.drawable.ic_folder
+                listing.onClick = fun (){
+
+                }
             }
             else{
                 listing.iconRes = R.drawable.ic_file
@@ -105,10 +129,31 @@ class DirectoryList(private var path: Path = Path("")) {
         }
     }
 
+    fun updatePath(pathName:String){
+        val path = Path(pathName)
+        updatePath(path)
+    }
+
     fun updatePath(path: Path){
         if (!path.isDirectory()){
             throw Error("Path is not a directory")
         }
+
+        println("rendering path: ${path}")
+        // manage the back button
+        if (historicStateRenderer.size > 0){
+            renderedAboveDirectoryContents.add(0, backFolderButton)
+        }
+        else if (renderedAboveDirectoryContents.isNotEmpty()){
+            renderedAboveDirectoryContents.remove(backFolderButton)
+        }
+
+        historicStateRenderer.add(fun() {
+            println("reverting to state located at ${path}")
+            updatePath(path.toString())
+        })
+
+        // draw all the contents of this folder
         val directoryContents = path.listDirectoryEntries()
         this.directoryContents.clear()
         for (item in directoryContents){
@@ -124,12 +169,17 @@ class DirectoryList(private var path: Path = Path("")) {
         }
     }
 
+    var menuPreviouslyRenderedTo:Menu? = null
     fun renderToMenu(menu: Menu){
+        if (menuPreviouslyRenderedTo != menu){
+            menuPreviouslyRenderedTo = menu
+        }
         clearMenu(menu)
         for (item in renderedAboveDirectoryContents){
             item.renderToMenu(menu)
         }
         for (item in directoryContents){
+            println("adding to menu: ${item.name}")
             item.renderToMenu(menu)
         }
         for (item in renderedBelowDirectoryContents){
@@ -137,10 +187,17 @@ class DirectoryList(private var path: Path = Path("")) {
         }
     }
 
+    fun renderToMenu(){
+        mainActivity.renderMenu()
+    }
+
     fun clearMenu(menu: Menu){
+        println("cleaning menu")
+
         while (!menu.isEmpty()){
             val forRemoval = menu.get(0)
             menu.removeItem(forRemoval.itemId)
+            println("forRemoval: ${forRemoval}")
         }
     }
 

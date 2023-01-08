@@ -19,6 +19,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var filesListToggle:ActionBarDrawerToggle
     private lateinit var mainAppView: DrawerLayout
     private val permissionChecker: PermssionController = PermssionController(this)
+    lateinit var filesListMenu: SubMenu
+    private lateinit var directoryListing: DirectoryList
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +45,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         filesDrawer.setNavigationItemSelectedListener(this)
 
+        val sideBarMenu = filesDrawer.menu
+        filesListMenu = sideBarMenu.findItem(R.id.files_list).subMenu
+
         if (savedInstanceState === null){
             buildFilesMenu(filesDrawer)
         }
@@ -55,14 +61,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onBackPressed()
     }
 
-    private lateinit var directoryListing: DirectoryList
-    private lateinit var filesListMenu: SubMenu
     private fun buildFilesMenu(filesDrawer: NavigationView){
-        val sideBarMenu = filesDrawer.menu
-        filesListMenu = sideBarMenu.findItem(R.id.files_list).subMenu
 
         println("applicationInfo.dataDir: ${applicationInfo.dataDir}")
-        directoryListing = DirectoryList(applicationInfo.dataDir)
+        directoryListing = DirectoryList(this)
+        directoryListing.updatePath(applicationInfo.dataDir)
 
         val folderAdd = FilesListItem(R.string.add_folder)
         folderAdd.iconRes = R.drawable.ic_folder_add
@@ -84,7 +87,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var openFolderButton:FilesListItem
     private lateinit var requestForStoragePermissionButton:FilesListItem
     private val pickFolder = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()){
-        directoryListing.updatePathFromFiletreeUri(this, it)
+        directoryListing.updatePathFromFiletreeUri(it)
     }
 
     private fun rebuildOpenFolder(){
@@ -139,16 +142,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
-        rebuildOpenFolder()
-        directoryListing.renderToMenu(filesListMenu)
+        renderMenu()
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus){
-            rebuildOpenFolder()
-            directoryListing.renderToMenu(filesListMenu)
+            renderMenu()
         }
         super.onWindowFocusChanged(hasFocus)
+    }
+
+    fun renderMenu(){
+        if (! ::filesListMenu.isInitialized){
+            return
+        }
+        rebuildOpenFolder()
+        directoryListing.renderToMenu(filesListMenu)
     }
 }

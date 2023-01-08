@@ -8,6 +8,7 @@
     <string name="add_file">Add New Folder</string>
     <string name="add_folder">Add New File</string>
     <string name="open_folder">Open Folder</string>
+    <string name="back_folder">Previous Folder</string>
     <string name="grant_storage_permission">Grant Permission To Access Storage</string>
     <string name="grant_manage_storage_permission">Grant Manage Storage Permission</string>
 </resources>
