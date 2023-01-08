@@ -61,11 +61,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         println("applicationInfo.dataDir: ${applicationInfo.dataDir}")
         directoryListing = DirectoryList(applicationInfo.dataDir)
+
+        val folderAdd = FilesListItem(R.string.add_folder)
+        folderAdd.iconRes = R.drawable.ic_folder_add
         directoryListing.renderedBelowDirectoryContents.add(
-            FilesListItem(R.string.add_folder)
+            folderAdd
         )
+
+        val fileAdd = FilesListItem(R.string.add_file)
+        fileAdd.iconRes = R.drawable.ic_file_add
         directoryListing.renderedBelowDirectoryContents.add(
-            FilesListItem(R.string.add_file)
+            fileAdd
         )
 
         rebuildOpenFolder()
