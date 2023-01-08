@@ -1,10 +1,13 @@
 package com.muggy8.spell_check_writer
 
+import android.content.Context
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.view.Menu
 import android.view.MenuItem
 import androidx.core.view.get
 import androidx.core.view.isEmpty
+import androidx.documentfile.provider.DocumentFile
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.Path
@@ -81,6 +84,25 @@ class DirectoryList(private var path: Path = Path("")) {
     fun updatePath(pathName:String){
         path = Path(pathName)
         updatePath(path)
+    }
+
+    fun updatePathFromFiletreeUri(context: Context, uri: Uri){
+        val documentFile = DocumentFile.fromTreeUri(context, uri)
+        val directoryContents = documentFile!!.listFiles()
+        this.directoryContents.clear()
+        for (item in directoryContents){
+
+            val listing = FilesListItem()
+            listing.name = item.name
+            if (item.isDirectory()){
+                listing.iconRes = R.drawable.ic_folder
+            }
+            else{
+                listing.iconRes = R.drawable.ic_file
+            }
+
+            this.directoryContents.add(listing)
+        }
     }
 
     fun updatePath(path: Path){

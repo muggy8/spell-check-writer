@@ -1,10 +1,6 @@
 package com.muggy8.spell_check_writer
 
-import android.R.attr.data
-import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.SubMenu
@@ -15,7 +11,6 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
-import java.io.File
 
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -89,23 +84,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var openFolderButton:FilesListItem
     private lateinit var requestForStoragePermissionButton:FilesListItem
     private val pickFolder = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()){
-        println("uri: ${it}")
-        println("path: ${it.path}")
-        println("authority: ${it.authority}")
-        println("host: ${it.host}")
-        println("fragment: ${it.fragment}")
-        println("pathSegments: ${it.pathSegments}")
-        println("lastPathSegment: ${it.lastPathSegment}")
-
-//        println("realPath: ${RealPathUtil.getRealPath(this, )}")
-
-//        if (it.path != null){
-//            directoryListing.updatePath(it.path as String)
-//        }
+        directoryListing.updatePathFromFiletreeUri(this, it)
     }
 
     private fun rebuildOpenFolder(){
-        println("building open folder buton")
+        println("building open folder button")
         if (permissionChecker.hasFileAccessPermission()){
             if (! ::openFolderButton.isInitialized){
                 openFolderButton = FilesListItem(R.string.open_folder)
@@ -149,13 +132,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onNavigationItemSelected(menuItem: MenuItem): Boolean {
         directoryListing.menuClicked(menuItem)
         return true
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        println("requestCode: ${requestCode}, resultCode: ${resultCode}, data: ${data}")
-        rebuildOpenFolder()
-        directoryListing.renderToMenu(filesListMenu)
-        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onRequestPermissionsResult(
