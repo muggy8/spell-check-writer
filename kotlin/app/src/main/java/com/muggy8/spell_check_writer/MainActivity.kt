@@ -2,6 +2,7 @@ package com.muggy8.spell_check_writer
 
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.view.MenuItem
 import android.view.SubMenu
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,7 +22,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private val permissionChecker: PermssionController = PermssionController(this)
     lateinit var filesListMenu: SubMenu
     private lateinit var directoryListing: DirectoryList
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,7 +49,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         filesListMenu = sideBarMenu.findItem(R.id.files_list).subMenu
 
         if (savedInstanceState === null){
-            buildFilesMenu(filesDrawer)
+            directoryListing = DirectoryList(this)
+            if (permissionChecker.hasFileAccessPermission()){
+                directoryListing.updatePath(Environment.getExternalStorageDirectory().absolutePath)
+            }
+            renderMenu()
         }
     }
 
@@ -61,47 +65,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onBackPressed()
     }
 
-    private fun buildFilesMenu(filesDrawer: NavigationView){
-
-        println("applicationInfo.dataDir: ${applicationInfo.dataDir}")
-        directoryListing = DirectoryList(this)
-        directoryListing.updatePath(applicationInfo.dataDir)
-
-        val folderAdd = FilesListItem(R.string.add_folder)
-        folderAdd.iconRes = R.drawable.ic_folder_add
-        directoryListing.renderedBelowDirectoryContents.add(
-            folderAdd
-        )
-
-        val fileAdd = FilesListItem(R.string.add_file)
-        fileAdd.iconRes = R.drawable.ic_file_add
-        directoryListing.renderedBelowDirectoryContents.add(
-            fileAdd
-        )
-
-        rebuildOpenFolder()
-
-        directoryListing.renderToMenu(filesListMenu)
-    }
-
-    private lateinit var openFolderButton:FilesListItem
     private lateinit var requestForStoragePermissionButton:FilesListItem
-    private val pickFolder = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()){
-        directoryListing.updatePathFromFiletreeUri(it)
-    }
 
-    private fun rebuildOpenFolder(){
+    private fun rebuildPermissionRequester(){
         println("building open folder button")
         if (permissionChecker.hasFileAccessPermission()){
-            if (! ::openFolderButton.isInitialized){
-                openFolderButton = FilesListItem(R.string.open_folder)
-                directoryListing.renderedBelowDirectoryContents.add(
-                    openFolderButton
-                )
-                openFolderButton.onClick = fun(){
-                    pickFolder.launch(Uri.EMPTY)
-                }
-            }
             if (::requestForStoragePermissionButton.isInitialized){
                 directoryListing.renderedBelowDirectoryContents.remove(
                     requestForStoragePermissionButton
@@ -109,11 +77,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         }
         else {
-            if (::openFolderButton.isInitialized){
-                directoryListing.renderedBelowDirectoryContents.remove(
-                    openFolderButton
-                )
-            }
             if (::requestForStoragePermissionButton.isInitialized){
                 requestForStoragePermissionButton.nameRes = permissionChecker.requestPermissionLabelTextRes()
             }
@@ -148,6 +111,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus){
+            if (permissionChecker.hasFileAccessPermission() && directoryListing.hasNoContents()){
+                directoryListing.updatePath(Environment.getExternalStorageDirectory().absolutePath)
+            }
             renderMenu()
         }
         super.onWindowFocusChanged(hasFocus)
@@ -157,7 +123,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (! ::filesListMenu.isInitialized){
             return
         }
-        rebuildOpenFolder()
+        rebuildPermissionRequester()
         directoryListing.renderToMenu(filesListMenu)
     }
 }

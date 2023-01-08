@@ -233,4 +233,11 @@ class DirectoryList(private var mainActivity: MainActivity) {
             }
         }
     }
+
+    fun hasContents():Boolean{
+        return !directoryContents.isEmpty()
+    }
+    fun hasNoContents():Boolean{
+        return directoryContents.isEmpty()
+    }
 }
