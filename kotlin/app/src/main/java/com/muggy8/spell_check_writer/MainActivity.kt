@@ -76,31 +76,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         editorWebapp = findViewById(R.id.editing_webapp)
         editorWebapp.settings.javaScriptEnabled = true
         editorWebapp.addJavascriptInterface(this, "Android")
-        application.assets.open("editor.html").apply{
-//            var editorHTML = this.readBytes()
-            var editorHTML = this.bufferedReader()
-                .use(BufferedReader::readText)
-            val encodedHtml = Base64.encodeToString(editorHTML.toByteArray(), Base64.NO_PADDING)
-            editorWebapp.loadData(encodedHtml, "text/html", "base64")
-        }.close()
-
-        val colorPrimary = TypedValue()
-        val white = TypedValue()
-        val black = TypedValue()
-        val theme: Theme = this.getTheme()
-        theme.resolveAttribute(R.color.black, black, true)
-        theme.resolveAttribute(R.color.white, white, true)
 
 
-        println("attribute value")
-        println(white.coerceToString())
-        println(black.coerceToString())
-        println(ContextCompat.getColor(this, R.color.black))
-
-
+        val white = "#FFF"
+        val black = "#000"
         var backgroundColor = white
         var color = black
-
         when (this.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
             Configuration.UI_MODE_NIGHT_YES -> {
                 backgroundColor = black
@@ -115,56 +96,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 color = black
             }
         }
-        editorWebapp.evaluateJavascript("""
-            (function(){
-                function convertHex(hexCode, opacity = 1){
-                    let hex = hexCode.replace('#', '');
-                
-                    let r,g,b,
-                        a = "F"
-                    switch(hex.length){
-                        case 3: [r,g,b] = hex
-                            
-                            break
-                        case 4: [r,g,b,a] = hex
-                            break
-                        case 8: 
-                            a = hex.substring(6,8)
-                        case 6: 
-                            r = hex.substring(0,2)
-                            g = hex.substring(2,4)
-                            b = hex.substring(4,6)
-                            break
-                    }
-                    
-                    r = parseInt(r)
-                    g = parseInt(g)
-                    b = parseInt(b)
-                    a = parseInt(a)
-                    
-                    return [r,g,b,a]
-                }
-                
-                function subtractFromColor(colorToSubtractFrom, colorToSubtract){
-                    let subFrom = convertHex(colorToSubtractFrom)
-                    let sub = convertHex(colorToSubtract)
-                    
-                    let [r,g,b,a] = subFrom.map((sourceColorVal, index)=>sourceColorVal - sub[index])
-                    
-                    return "rgba(r,g,b,a)"
-                        .replace("r", r)
-                        .replace("g", g)
-                        .replace("b", b)
-                        .replace("a", a)
-                }
-            
-                document.body.style.backgroundColor = "${backgroundColor.coerceToString()}";
-                document.body.style.color = "${color.coerceToString()}"
-                
-            })()
-        """.trimIndent()){
+        println("color: $color| backgroundColor: $backgroundColor")
 
-        }
+        application.assets.open("editor.html").apply{
+//            var editorHTML = this.readBytes()
+            var editorHTML = this.bufferedReader()
+                .use(BufferedReader::readText)
+            editorHTML = editorHTML.replace("/*theme-replacement*/", """
+                html, body {
+                    color: ${color};
+                    background-color: ${backgroundColor};
+                }
+            """.trimIndent())
+
+            val encodedHtml = Base64.encodeToString(editorHTML.toByteArray(), Base64.NO_PADDING)
+            editorWebapp.loadData(encodedHtml, "text/html", "base64")
+        }.close()
 
         // initiate some states only if we're not starting for he first time
         if (savedInstanceState === null){
