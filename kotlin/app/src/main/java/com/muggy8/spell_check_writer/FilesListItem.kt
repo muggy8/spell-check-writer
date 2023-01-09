@@ -2,6 +2,7 @@ package com.muggy8.spell_check_writer
 
 import android.graphics.drawable.Drawable
 import android.os.Handler
+import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
 import androidx.core.view.get
@@ -140,7 +141,7 @@ class DirectoryList(private var mainActivity: MainActivity) {
     }
 
     fun renderToMenu(){
-        Handler().postDelayed(
+        Handler(Looper.getMainLooper()).postDelayed(
             fun(){
                 if (menuPreviouslyRenderedTo == null){
                     return

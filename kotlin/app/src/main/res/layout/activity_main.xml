@@ -21,10 +21,11 @@
             android:id="@+id/primary_toolbar"
         />
 
-        <com.google.android.material.textfield.TextInputEditText
+        <WebView
+            android:id="@+id/editing_webapp"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/edit_text_area"/>
+            android:layout_height="match_parent" />
+
 
     </LinearLayout>
 

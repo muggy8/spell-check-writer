@@ -5,15 +5,18 @@ import android.os.Bundle
 import android.os.Environment
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Base64
 import android.view.MenuItem
 import android.view.SubMenu
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
-import com.google.android.material.textfield.TextInputEditText
+import java.io.BufferedReader
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
@@ -26,9 +29,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private val permissionChecker: PermssionController = PermssionController(this)
     lateinit var filesListMenu: SubMenu
     private lateinit var directoryListing: DirectoryList
-    private lateinit var textInputArea: TextInputEditText
     val setCurrentAsDefaultButton: FilesListItem = FilesListItem()
     private lateinit var storage:SharedPreferences
+    private lateinit var editorWebapp: WebView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,12 +71,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
         // stuff to do with the big text area where the text will be edited
-        textInputArea = findViewById(R.id.edit_text_area)
-        textInputArea.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable) {}
-            override fun beforeTextChanged( text: CharSequence, start: Int, count: Int, after: Int ){}
-            override fun onTextChanged( text: CharSequence, start: Int, before: Int, count: Int){}
-        })
+        editorWebapp = findViewById(R.id.editing_webapp)
+        editorWebapp.settings.javaScriptEnabled = true
+        editorWebapp.addJavascriptInterface(this, "Android")
+        application.assets.open("editor.html").apply{
+//            var editorHTML = this.readBytes()
+            var editorHTML = this.bufferedReader()
+                .use(BufferedReader::readText)
+            val encodedHtml = Base64.encodeToString(editorHTML.toByteArray(), Base64.NO_PADDING)
+            editorWebapp.loadData(encodedHtml, "text/html", "base64")
+        }.close()
+
+        editorWebapp
 
         // initiate some states only if we're not starting for he first time
         if (savedInstanceState === null){
@@ -187,11 +196,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val file = filePath.toFile()
         val fileContents = file.readText()
 
-        textInputArea.setText(fileContents)
-        textInputArea.text?.let { textInputArea.setSelection(it.length) }
-        if (mainAppView.isDrawerOpen(GravityCompat.START)){
-            return mainAppView.closeDrawer(GravityCompat.START)
-        }
+
     }
+
+    @JavascriptInterface
+    fun saveFile(path: String, contents: String){}
 }
 
