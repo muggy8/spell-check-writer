@@ -1,17 +1,19 @@
 package com.muggy8.spell_check_writer
 
-import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.view.MenuItem
 import android.view.SubMenu
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import java.nio.file.Path
+
 
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -126,4 +128,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         rebuildPermissionRequester()
         directoryListing.renderToMenu(filesListMenu)
     }
+
+    fun openFile(filePath: Path){
+        val textAreaWrapper = findViewById<TextInputLayout>(R.id.text_area_wrapper)
+        val textInputArea = findViewById<TextInputEditText>(R.id.edit_text_area)
+
+        val file = filePath.toFile()
+        val fileContents = file.readText()
+
+        textInputArea.setText(fileContents)
+        if (mainAppView.isDrawerOpen(GravityCompat.START)){
+            return mainAppView.closeDrawer(GravityCompat.START)
+        }
+    }
 }
+

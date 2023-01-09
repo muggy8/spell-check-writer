@@ -21,11 +21,22 @@
             android:id="@+id/primary_toolbar"
         />
 
-        <FrameLayout
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/text_area"
-        />
+            android:id="@+id/text_area_wrapper">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/edit_text_area"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!--        <FrameLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:id="@+id/text_area"-->
+<!--        />-->
 
     </LinearLayout>
 

@@ -113,6 +113,9 @@ class DirectoryList(private var mainActivity: MainActivity) {
             }
             else{
                 listing.iconRes = R.drawable.ic_file
+                listing.onClick = fun(){
+                    mainActivity.openFile(item)
+                }
             }
 
             this.directoryContents.add(listing)
@@ -177,9 +180,6 @@ class DirectoryList(private var mainActivity: MainActivity) {
         }
     }
 
-    fun hasContents():Boolean{
-        return !directoryContents.isEmpty()
-    }
     fun hasNoContents():Boolean{
         return directoryContents.isEmpty()
     }
