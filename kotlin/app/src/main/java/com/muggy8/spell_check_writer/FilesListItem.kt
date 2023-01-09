@@ -1,13 +1,11 @@
 package com.muggy8.spell_check_writer
 
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Handler
 import android.view.Menu
 import android.view.MenuItem
 import androidx.core.view.get
 import androidx.core.view.isEmpty
-import androidx.documentfile.provider.DocumentFile
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.*
@@ -70,65 +68,15 @@ class DirectoryList(private var mainActivity: MainActivity) {
     private var directoryContents = mutableListOf<FilesListItem>()
     var renderedAboveDirectoryContents = mutableListOf<FilesListItem>()
     var renderedBelowDirectoryContents = mutableListOf<FilesListItem>()
-    private val historicStateRenderer = mutableListOf<()->Unit>()
     private var backFolderButton = FilesListItem()
+    private var currentWorkingPath = Path("")
 
     init {
         backFolderButton.nameRes = R.string.back_folder
         backFolderButton.iconRes = R.drawable.ic_back_folder
         backFolderButton.onClick = fun(){
-            if (historicStateRenderer.isEmpty()){
-                return
-            }
-
-            val currentStateRenderer = historicStateRenderer.last()
-            historicStateRenderer.remove(currentStateRenderer)
-
-            val previousStateRenderer = historicStateRenderer.last()
-            historicStateRenderer.remove(previousStateRenderer)
-            previousStateRenderer()
+            updatePath(currentWorkingPath.parent)
             renderToMenu()
-        }
-    }
-
-    fun updatePathFromFiletreeUri(uri: Uri){
-        // manage the back button
-        if (historicStateRenderer.size > 0){
-            if(!renderedAboveDirectoryContents.contains(backFolderButton)){
-                renderedAboveDirectoryContents.add(0, backFolderButton)
-            }
-        }
-        else if (renderedAboveDirectoryContents.isNotEmpty()){
-            renderedAboveDirectoryContents.remove(backFolderButton)
-        }
-
-        historicStateRenderer.add(fun() {
-            updatePathFromFiletreeUri(uri)
-        })
-
-        // actually figure out what the heck is in the folder and render it
-        val documentFile = DocumentFile.fromTreeUri(mainActivity, uri)
-        val directoryContents = documentFile!!.listFiles()
-        println("Reading ${uri}")
-        println("got contents for  ${documentFile.uri}")
-        this.directoryContents.clear()
-        for (item in directoryContents){
-            println("Adding to list ${item.uri}")
-            val listing = FilesListItem()
-            listing.name = item.name
-            if (item.isDirectory()){
-                listing.iconRes = R.drawable.ic_folder
-                listing.onClick = fun (){
-                    println("Navigating to ${item.uri}")
-                    updatePathFromFiletreeUri(item.uri)
-                    renderToMenu()
-                }
-            }
-            else{
-                listing.iconRes = R.drawable.ic_file
-            }
-
-            this.directoryContents.add(listing)
         }
     }
 
@@ -141,20 +89,15 @@ class DirectoryList(private var mainActivity: MainActivity) {
         if (!path.isDirectory()){
             throw Error("Path is not a directory")
         }
-
-        // manage the back button
-        if (historicStateRenderer.size > 0){
+        currentWorkingPath = path
+        if (canGoUp()){
             if(!renderedAboveDirectoryContents.contains(backFolderButton)){
                 renderedAboveDirectoryContents.add(0, backFolderButton)
             }
         }
-        else if (renderedAboveDirectoryContents.isNotEmpty()){
+        else if (renderedAboveDirectoryContents.contains(backFolderButton)){
             renderedAboveDirectoryContents.remove(backFolderButton)
         }
-
-        historicStateRenderer.add(fun() {
-            updatePath(path.toString())
-        })
 
         // draw all the contents of this folder
         this.directoryContents.clear()
@@ -201,7 +144,7 @@ class DirectoryList(private var mainActivity: MainActivity) {
                 }
                 renderToMenu(menuPreviouslyRenderedTo!!)
             },
-            301
+            251
         )
 
     }
@@ -239,5 +182,19 @@ class DirectoryList(private var mainActivity: MainActivity) {
     }
     fun hasNoContents():Boolean{
         return directoryContents.isEmpty()
+    }
+    fun canGoUp():Boolean{
+        val parentPath = currentWorkingPath.parent
+        if (parentPath == null){
+            return false
+        }
+        try {
+            parentPath.listDirectoryEntries()
+        }
+        catch (e: Exception){
+            return false
+        }
+
+        return true
     }
 }

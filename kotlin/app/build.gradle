@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.muggy8.spell_check_writer"
-        minSdk 24
+        minSdk 26
         targetSdk 32
         versionCode 1
         versionName "1.0"
