@@ -14,4 +14,5 @@
     <string name="grant_storage_permission">Grant Permission To Access Storage</string>
     <string name="grant_manage_storage_permission">Grant Manage Storage Permission</string>
     <string name="current_as_default">Set This Folder As Default Folder</string>
+    <string name="contents_inaccessable">Folder Contents Inaccessable</string>
 </resources>

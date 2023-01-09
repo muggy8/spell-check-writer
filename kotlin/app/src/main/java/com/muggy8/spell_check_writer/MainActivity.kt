@@ -1,11 +1,12 @@
 package com.muggy8.spell_check_writer
 
 import android.content.SharedPreferences
+import android.content.res.Configuration
+import android.content.res.Resources.Theme
 import android.os.Bundle
 import android.os.Environment
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Base64
+import android.util.TypedValue
 import android.view.MenuItem
 import android.view.SubMenu
 import android.webkit.JavascriptInterface
@@ -13,6 +14,7 @@ import android.webkit.WebView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
@@ -82,7 +84,87 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             editorWebapp.loadData(encodedHtml, "text/html", "base64")
         }.close()
 
-        editorWebapp
+        val colorPrimary = TypedValue()
+        val white = TypedValue()
+        val black = TypedValue()
+        val theme: Theme = this.getTheme()
+        theme.resolveAttribute(R.color.black, black, true)
+        theme.resolveAttribute(R.color.white, white, true)
+
+
+        println("attribute value")
+        println(white.coerceToString())
+        println(black.coerceToString())
+        println(ContextCompat.getColor(this, R.color.black))
+
+
+        var backgroundColor = white
+        var color = black
+
+        when (this.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
+            Configuration.UI_MODE_NIGHT_YES -> {
+                backgroundColor = black
+                color = white
+            }
+            Configuration.UI_MODE_NIGHT_NO -> {
+                backgroundColor = white
+                color = black
+            }
+            Configuration.UI_MODE_NIGHT_UNDEFINED -> {
+                backgroundColor = white
+                color = black
+            }
+        }
+        editorWebapp.evaluateJavascript("""
+            (function(){
+                function convertHex(hexCode, opacity = 1){
+                    let hex = hexCode.replace('#', '');
+                
+                    let r,g,b,
+                        a = "F"
+                    switch(hex.length){
+                        case 3: [r,g,b] = hex
+                            
+                            break
+                        case 4: [r,g,b,a] = hex
+                            break
+                        case 8: 
+                            a = hex.substring(6,8)
+                        case 6: 
+                            r = hex.substring(0,2)
+                            g = hex.substring(2,4)
+                            b = hex.substring(4,6)
+                            break
+                    }
+                    
+                    r = parseInt(r)
+                    g = parseInt(g)
+                    b = parseInt(b)
+                    a = parseInt(a)
+                    
+                    return [r,g,b,a]
+                }
+                
+                function subtractFromColor(colorToSubtractFrom, colorToSubtract){
+                    let subFrom = convertHex(colorToSubtractFrom)
+                    let sub = convertHex(colorToSubtract)
+                    
+                    let [r,g,b,a] = subFrom.map((sourceColorVal, index)=>sourceColorVal - sub[index])
+                    
+                    return "rgba(r,g,b,a)"
+                        .replace("r", r)
+                        .replace("g", g)
+                        .replace("b", b)
+                        .replace("a", a)
+                }
+            
+                document.body.style.backgroundColor = "${backgroundColor.coerceToString()}";
+                document.body.style.color = "${color.coerceToString()}"
+                
+            })()
+        """.trimIndent()){
+
+        }
 
         // initiate some states only if we're not starting for he first time
         if (savedInstanceState === null){

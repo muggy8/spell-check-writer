@@ -102,24 +102,31 @@ class DirectoryList(private var mainActivity: MainActivity) {
 
         // draw all the contents of this folder
         this.directoryContents.clear()
-        val directoryContents = path.listDirectoryEntries()
-        for (item in directoryContents){
-            val listing = FilesListItem(item.name)
-            if (item.isDirectory()){
-                listing.iconRes = R.drawable.ic_folder
-                listing.onClick = fun(){
-                    updatePath(item.pathString)
-                    renderToMenu()
+        try{
+            val directoryContents = path.listDirectoryEntries()
+            for (item in directoryContents){
+                val listing = FilesListItem(item.name)
+                if (item.isDirectory()){
+                    listing.iconRes = R.drawable.ic_folder
+                    listing.onClick = fun(){
+                        updatePath(item.pathString)
+                        renderToMenu()
+                    }
                 }
-            }
-            else{
-                listing.iconRes = R.drawable.ic_file
-                listing.onClick = fun(){
-                    mainActivity.openFile(item)
+                else{
+                    listing.iconRes = R.drawable.ic_file
+                    listing.onClick = fun(){
+                        mainActivity.openFile(item)
+                    }
                 }
-            }
 
-            this.directoryContents.add(listing)
+                this.directoryContents.add(listing)
+            }
+        }
+        catch (e:Exception){
+            // meh whatever we probably dont have permission so lets pretend it's an empty file
+            val inaccessableListing = FilesListItem(R.string.contents_inaccessable)
+            this.directoryContents.add(inaccessableListing)
         }
     }
 
