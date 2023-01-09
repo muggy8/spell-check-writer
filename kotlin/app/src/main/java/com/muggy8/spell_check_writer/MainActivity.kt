@@ -2,6 +2,8 @@ package com.muggy8.spell_check_writer
 
 import android.os.Bundle
 import android.os.Environment
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.MenuItem
 import android.view.SubMenu
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -11,9 +13,7 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import java.nio.file.Path
-
 
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private val permissionChecker: PermssionController = PermssionController(this)
     lateinit var filesListMenu: SubMenu
     private lateinit var directoryListing: DirectoryList
+    private lateinit var textInputArea: TextInputEditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +50,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         val sideBarMenu = filesDrawer.menu
         filesListMenu = sideBarMenu.findItem(R.id.files_list).subMenu
+
+        textInputArea = findViewById(R.id.edit_text_area)
+
+        textInputArea.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable) {}
+            override fun beforeTextChanged( text: CharSequence, start: Int, count: Int, after: Int ){}
+            override fun onTextChanged( text: CharSequence, start: Int, before: Int, count: Int){}
+        })
 
         if (savedInstanceState === null){
             directoryListing = DirectoryList(this)
@@ -130,13 +139,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     fun openFile(filePath: Path){
-        val textAreaWrapper = findViewById<TextInputLayout>(R.id.text_area_wrapper)
-        val textInputArea = findViewById<TextInputEditText>(R.id.edit_text_area)
 
         val file = filePath.toFile()
         val fileContents = file.readText()
 
         textInputArea.setText(fileContents)
+        textInputArea.text?.let { textInputArea.setSelection(it.length) }
         if (mainAppView.isDrawerOpen(GravityCompat.START)){
             return mainAppView.closeDrawer(GravityCompat.START)
         }
