@@ -157,8 +157,8 @@ class DirectoryList(private var mainActivity: MainActivity) {
         })
 
         // draw all the contents of this folder
-        val directoryContents = path.listDirectoryEntries()
         this.directoryContents.clear()
+        val directoryContents = path.listDirectoryEntries()
         for (item in directoryContents){
             val listing = FilesListItem(item.name)
             if (item.isDirectory()){
