@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">Spell Check Writer</string>
+    <string name="key_preference_file_key">app_storage</string>
+    <string name="key_default_starting_folder">default_folder</string>
 
     <string name="open_files_drawer">Open Files Drawer</string>
     <string name="close_files_drawer">Close Files Drawer</string>
@@ -8,7 +10,8 @@
     <string name="add_file">Add New Folder</string>
     <string name="add_folder">Add New File</string>
     <string name="open_folder">Open Folder</string>
-    <string name="back_folder">Previous Folder</string>
+    <string name="back_folder">Parent Folder</string>
     <string name="grant_storage_permission">Grant Permission To Access Storage</string>
     <string name="grant_manage_storage_permission">Grant Manage Storage Permission</string>
+    <string name="current_as_default">Set This Folder As Default Folder</string>
 </resources>

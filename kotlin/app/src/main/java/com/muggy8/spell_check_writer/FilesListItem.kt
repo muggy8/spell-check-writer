@@ -197,4 +197,8 @@ class DirectoryList(private var mainActivity: MainActivity) {
 
         return true
     }
+
+    fun getCurrentWorkingPath():Path{
+        return currentWorkingPath
+    }
 }
