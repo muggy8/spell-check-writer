@@ -1,6 +1,10 @@
+<!DOCTYPE html>
 <html>
     <head>
         <style>
+            * {
+                box-sizing: border-box;
+            }
             html, body, #editor {
                 margin: 0;
                 padding: 0;
@@ -10,6 +14,7 @@
             }
             #editor {
                 padding: 1em;
+                overflow: auto;
             }
             .dark {
                 background-color: #000;
@@ -17,9 +22,11 @@
             }
             /*theme-replacement*/
         </style>
-        <script></script>
     </head>
     <body>
+        <div id="tabs-list">
+
+        </div>
         <div id="editor" contentEditable="true">
             Placeholder
         </div>

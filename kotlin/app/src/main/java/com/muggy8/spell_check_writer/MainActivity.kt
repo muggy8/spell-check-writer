@@ -2,19 +2,17 @@ package com.muggy8.spell_check_writer
 
 import android.content.SharedPreferences
 import android.content.res.Configuration
-import android.content.res.Resources.Theme
 import android.os.Bundle
 import android.os.Environment
 import android.util.Base64
-import android.util.TypedValue
 import android.view.MenuItem
 import android.view.SubMenu
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
@@ -75,6 +73,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // stuff to do with the big text area where the text will be edited
         editorWebapp = findViewById(R.id.editing_webapp)
         editorWebapp.settings.javaScriptEnabled = true
+        editorWebapp.settings.domStorageEnabled = true
         editorWebapp.addJavascriptInterface(this, "Android")
 
 
@@ -98,20 +97,31 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
         println("color: $color| backgroundColor: $backgroundColor")
 
-        application.assets.open("editor.html").apply{
-//            var editorHTML = this.readBytes()
-            var editorHTML = this.bufferedReader()
-                .use(BufferedReader::readText)
-            editorHTML = editorHTML.replace("/*theme-replacement*/", """
-                html, body {
-                    color: ${color};
-                    background-color: ${backgroundColor};
-                }
-            """.trimIndent())
+        val editorFile = application.assets.open("editor.html")
+        var editorHTML = editorFile.bufferedReader()
+            .use(BufferedReader::readText)
+        editorFile.close()
 
-            val encodedHtml = Base64.encodeToString(editorHTML.toByteArray(), Base64.NO_PADDING)
-            editorWebapp.loadData(encodedHtml, "text/html", "base64")
-        }.close()
+        editorWebapp.setWebViewClient(object : WebViewClient() {
+            override fun onPageFinished(view: WebView, url: String) {
+                // time to use the super archaic method of loading in js because the normal way wont work for some reason >:(
+                val jsFile = application.assets.open("editor.js")
+                val jsContents = jsFile.bufferedReader()
+                    .use(BufferedReader::readText)
+                jsFile.close()
+
+                editorWebapp.evaluateJavascript(jsContents){}
+            }
+        })
+
+        editorHTML = editorHTML.replace("/*theme-replacement*/", """
+            html, body {
+                color: ${color};
+                background-color: ${backgroundColor};
+            }
+        """.trimIndent())
+        val encodedHtml = Base64.encodeToString(editorHTML.toByteArray(), Base64.NO_PADDING)
+        editorWebapp.loadData(encodedHtml, "text/html", "base64")
 
         // initiate some states only if we're not starting for he first time
         if (savedInstanceState === null){
@@ -221,14 +231,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     fun openFile(filePath: Path){
-
         val file = filePath.toFile()
-        val fileContents = file.readText()
+        val encodedFileContents = Base64.encodeToString(file.readBytes(), Base64.NO_PADDING)
 
+        val jsCode = """
+            loadFile(`${filePath.toUri()}`, `${encodedFileContents}`)
+        """.trimIndent()
+        println(jsCode)
+
+        editorWebapp.evaluateJavascript( jsCode ) {
+            mainAppView.closeDrawer(GravityCompat.START)
+        }
 
     }
 
     @JavascriptInterface
     fun saveFile(path: String, contents: String){}
 }
-
