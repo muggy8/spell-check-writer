@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Environment
 import android.util.Base64
+import android.util.TypedValue
 import android.view.MenuItem
 import android.view.SubMenu
 import android.webkit.JavascriptInterface
@@ -76,26 +77,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         editorWebapp.settings.domStorageEnabled = true
         editorWebapp.addJavascriptInterface(this, "Android")
 
-
-        val white = "#FFF"
-        val black = "#000"
-        var backgroundColor = white
-        var color = black
-        when (this.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
-            Configuration.UI_MODE_NIGHT_YES -> {
-                backgroundColor = black
-                color = white
-            }
-            Configuration.UI_MODE_NIGHT_NO -> {
-                backgroundColor = white
-                color = black
-            }
-            Configuration.UI_MODE_NIGHT_UNDEFINED -> {
-                backgroundColor = white
-                color = black
-            }
-        }
-        println("color: $color| backgroundColor: $backgroundColor")
+        val backgroundColor = TypedValue()
+        val color = TypedValue()
+        val colorPrimary = TypedValue()
+        theme.resolveAttribute(android.R.attr.colorBackground, backgroundColor, true)
+        theme.resolveAttribute(android.R.attr.colorForeground, color, true)
+        theme.resolveAttribute(android.R.attr.colorPrimary, colorPrimary, true)
 
         val editorFile = application.assets.open("editor.html")
         var editorHTML = editorFile.bufferedReader()
@@ -116,10 +103,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         editorHTML = editorHTML.replace("/*theme-replacement*/", """
             html, body {
-                color: ${color};
-                background-color: ${backgroundColor};
+                --color: ${color.coerceToString().removeRange(1, 3)};
+                --background-color: ${backgroundColor.coerceToString().removeRange(1, 3)};
+                --color-primary: ${colorPrimary.coerceToString().removeRange(1, 3)};
+                background-color: var(--background-color);
+                color: var(--color);
             }
         """.trimIndent())
+
         val encodedHtml = Base64.encodeToString(editorHTML.toByteArray(), Base64.NO_PADDING)
         editorWebapp.loadData(encodedHtml, "text/html", "base64")
 
@@ -234,10 +225,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val file = filePath.toFile()
         val encodedFileContents = Base64.encodeToString(file.readBytes(), Base64.NO_PADDING)
 
-        val jsCode = """
-            loadFile(`${filePath.toUri()}`, `${encodedFileContents}`)
-        """.trimIndent()
-        println(jsCode)
+        val jsCode = """loadFile(`${filePath}`, `${encodedFileContents}`)"""
 
         editorWebapp.evaluateJavascript( jsCode ) {
             mainAppView.closeDrawer(GravityCompat.START)
@@ -246,5 +234,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     @JavascriptInterface
-    fun saveFile(path: String, contents: String){}
+    fun saveFile(path: String, contents: String){
+        println(path)
+        println(contents)
+    }
+
+//    private fun hasTargetStyle(attributes: AttributeSet): Boolean {
+//        val attributeNames: Enumeration<*> = attributes.getAttributeNames()
+//        while (attributeNames.hasMoreElements()) {
+//            val attributeName: Any = attributeNames.nextElement()
+//            if (attributeName == MY_STYLE_NAME) {
+//                return true
+//            }
+//        }
+//        return false
+//    }
 }
