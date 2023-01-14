@@ -1,12 +1,16 @@
 package com.muggy8.spell_check_writer
 
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.provider.DocumentsContract
 import android.view.Menu
 import android.view.MenuItem
+import androidx.core.net.toFile
 import androidx.core.view.get
 import androidx.core.view.isEmpty
+import androidx.documentfile.provider.DocumentFile
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.*
@@ -84,6 +88,34 @@ class DirectoryList(private var mainActivity: MainActivity) {
     fun updatePath(pathName:String){
         val path = Path(pathName)
         updatePath(path)
+    }
+
+    fun updatePath(uri: Uri){
+        this.directoryContents.clear()
+
+        println("testing testing 123")
+        val childrenUri =
+            DocumentsContract.buildChildDocumentsUriUsingTree(
+                uri,
+                DocumentsContract.getTreeDocumentId(uri)
+            )
+        println(childrenUri)
+        // get document file from children uri
+        val tree = DocumentFile.fromTreeUri(mainActivity, childrenUri)
+        // get the list of the documents
+        tree?.listFiles()?.forEach { doc ->
+            println(doc.uri)
+            doc.name?.let {
+                val listing = FilesListItem(it)
+                if (doc.isFile()) {
+                    listing.iconRes = R.drawable.ic_file
+                    listing.onClick = fun(){
+                        mainActivity.openFile(doc)
+                    }
+                    this.directoryContents.add(listing)
+                }
+            }
+        }
     }
 
     fun updatePath(path: Path){

@@ -1,9 +1,11 @@
 package com.muggy8.spell_check_writer
 
+import android.content.Intent
 import android.content.SharedPreferences
-import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.Base64
 import android.util.TypedValue
 import android.view.MenuItem
@@ -11,13 +13,19 @@ import android.view.SubMenu
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
+import androidx.documentfile.provider.DocumentFile
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import java.io.BufferedReader
+import java.io.File
+import java.io.FileWriter
+import java.io.InputStreamReader
+import java.nio.charset.Charset
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
@@ -30,7 +38,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private val permissionChecker: PermssionController = PermssionController(this)
     lateinit var filesListMenu: SubMenu
     private lateinit var directoryListing: DirectoryList
-    val setCurrentAsDefaultButton: FilesListItem = FilesListItem()
+    val openFolderButton: FilesListItem = FilesListItem()
     private lateinit var storage:SharedPreferences
     private lateinit var editorWebapp: WebView
 
@@ -66,9 +74,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // stuff to do with the contents of the drawer
         val sideBarMenu = filesDrawer.menu
         filesListMenu = sideBarMenu.findItem(R.id.files_list).subMenu
-        setCurrentAsDefaultButton.nameRes = R.string.current_as_default
-        setCurrentAsDefaultButton.onClick = fun(){
-            setDefaultFolder(directoryListing.getCurrentWorkingPath())
+        openFolderButton.nameRes = R.string.open_folder
+        openFolderButton.onClick = fun(){
+            selectFolder()
         }
 
         // stuff to do with the big text area where the text will be edited
@@ -122,12 +130,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     getString(R.string.key_preference_file_key),
                     Environment.getExternalStorageDirectory().absolutePath
                 )
-                if (defaultPath != null){
-                    directoryListing.updatePath(defaultPath)
-                }
-                else{
-                    directoryListing.updatePath(Environment.getExternalStorageDirectory().absolutePath)
-                }
+//                if (defaultPath != null){
+//                    directoryListing.updatePath(defaultPath)
+//                }
+//                else{
+//                    directoryListing.updatePath(Environment.getExternalStorageDirectory().absolutePath)
+//                }
             }
             renderMenu()
         }
@@ -143,6 +151,23 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private lateinit var requestForStoragePermissionButton:FilesListItem
 
+    private val dirRequest = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        uri?.let {
+            // call this to persist permission across decice reboots
+            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            // do your stuff
+
+//            setDefaultFolder(uri)
+
+            directoryListing.updatePath(it)
+        }
+    }
+
+    private fun selectFolder(){
+        dirRequest.launch(Uri.parse(Environment.getExternalStorageDirectory().toString()))
+    }
+
     private fun rebuildPermissionRequester(){
         println("building open folder button")
         if (permissionChecker.hasFileAccessPermission()){
@@ -151,8 +176,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     requestForStoragePermissionButton
                 )
             }
-            if (!directoryListing.renderedBelowDirectoryContents.contains(setCurrentAsDefaultButton)){
-                directoryListing.renderedBelowDirectoryContents.add(setCurrentAsDefaultButton)
+            if (!directoryListing.renderedBelowDirectoryContents.contains(openFolderButton)){
+                directoryListing.renderedBelowDirectoryContents.add(openFolderButton)
             }
         }
         else {
@@ -195,12 +220,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     getString(R.string.key_preference_file_key),
                     Environment.getExternalStorageDirectory().absolutePath
                 )
-                if (defaultPath != null){
-                    directoryListing.updatePath(defaultPath)
-                }
-                else{
-                    directoryListing.updatePath(Environment.getExternalStorageDirectory().absolutePath)
-                }
+//                if (defaultPath != null){
+//                    directoryListing.updatePath(defaultPath)
+//                }
+//                else{
+//                    directoryListing.updatePath(Environment.getExternalStorageDirectory().absolutePath)
+//                }
             }
             renderMenu()
         }
@@ -215,38 +240,61 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         directoryListing.renderToMenu(filesListMenu)
     }
 
-    private fun setDefaultFolder(path: Path){
+    private fun setDefaultFolder(uri: Uri){
         val storageEditor = storage.edit()
-        storageEditor.putString(getString(R.string.key_preference_file_key), path.toAbsolutePath().pathString)
+        storageEditor.putString(getString(R.string.key_preference_file_key), uri.path.toString())
         storageEditor.apply()
     }
 
     fun openFile(filePath: Path){
         val file = filePath.toFile()
         val encodedFileContents = Base64.encodeToString(file.readBytes(), Base64.NO_PADDING)
+        val jsCode = """loadFile(`${file}`, `${encodedFileContents}`)"""
 
+        editorWebapp.evaluateJavascript( jsCode ) {
+            mainAppView.closeDrawer(GravityCompat.START)
+        }
+    }
+
+    val openedFiles = HashMap<String, DocumentFile>()
+    fun openFile(file: DocumentFile){
+        val inputStream = contentResolver.openInputStream(file.uri)
+        val reader = BufferedReader(InputStreamReader(inputStream))
+        val contents = reader.use(BufferedReader::readText)
+        val encodedFileContents = Base64.encodeToString(contents.toByteArray(), Base64.NO_PADDING)
+        val filePath = file.uri.toString()
+        openedFiles.set(filePath, file)
         val jsCode = """loadFile(`${filePath}`, `${encodedFileContents}`)"""
 
         editorWebapp.evaluateJavascript( jsCode ) {
             mainAppView.closeDrawer(GravityCompat.START)
         }
-
     }
 
     @JavascriptInterface
-    fun saveFile(path: String, contents: String){
-        println(path)
+    fun saveFile(id: String, contents: String){
         println(contents)
+        println(id)
+
+        val file = openedFiles.get(id)
+        println(file)
+        if (file != null) {
+
+            val outputStream = contentResolver.openOutputStream(file.uri, "rwt")
+            if (outputStream != null) {
+                val writer = outputStream.writer(Charset.defaultCharset())
+                writer.write(contents)
+                writer.flush()
+                writer.close()
+            }
+        }
     }
 
-//    private fun hasTargetStyle(attributes: AttributeSet): Boolean {
-//        val attributeNames: Enumeration<*> = attributes.getAttributeNames()
-//        while (attributeNames.hasMoreElements()) {
-//            val attributeName: Any = attributeNames.nextElement()
-//            if (attributeName == MY_STYLE_NAME) {
-//                return true
-//            }
-//        }
-//        return false
-//    }
+}
+
+fun getRandomString(length: Int) : String {
+    val charset = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
+    return (1..length)
+        .map { charset.random() }
+        .joinToString("")
 }
