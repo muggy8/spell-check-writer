@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.provider.DocumentsContract
 import android.util.Base64
 import android.util.TypedValue
 import android.view.MenuItem
@@ -125,18 +124,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // initiate some states only if we're not starting for he first time
         if (savedInstanceState === null){
             directoryListing = DirectoryList(this)
-            if (permissionChecker.hasFileAccessPermission()){
-                val defaultPath = storage.getString(
-                    getString(R.string.key_preference_file_key),
-                    Environment.getExternalStorageDirectory().absolutePath
-                )
-//                if (defaultPath != null){
-//                    directoryListing.updatePath(defaultPath)
-//                }
-//                else{
-//                    directoryListing.updatePath(Environment.getExternalStorageDirectory().absolutePath)
-//                }
-            }
             renderMenu()
         }
     }
@@ -215,18 +202,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus){
-            if (permissionChecker.hasFileAccessPermission() && directoryListing.hasNoContents()){
-                val defaultPath = storage.getString(
-                    getString(R.string.key_preference_file_key),
-                    Environment.getExternalStorageDirectory().absolutePath
-                )
-//                if (defaultPath != null){
-//                    directoryListing.updatePath(defaultPath)
-//                }
-//                else{
-//                    directoryListing.updatePath(Environment.getExternalStorageDirectory().absolutePath)
-//                }
-            }
             renderMenu()
         }
         super.onWindowFocusChanged(hasFocus)
@@ -238,22 +213,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
         rebuildPermissionRequester()
         directoryListing.renderToMenu(filesListMenu)
-    }
-
-    private fun setDefaultFolder(uri: Uri){
-        val storageEditor = storage.edit()
-        storageEditor.putString(getString(R.string.key_preference_file_key), uri.path.toString())
-        storageEditor.apply()
-    }
-
-    fun openFile(filePath: Path){
-        val file = filePath.toFile()
-        val encodedFileContents = Base64.encodeToString(file.readBytes(), Base64.NO_PADDING)
-        val jsCode = """loadFile(`${file}`, `${encodedFileContents}`)"""
-
-        editorWebapp.evaluateJavascript( jsCode ) {
-            mainAppView.closeDrawer(GravityCompat.START)
-        }
     }
 
     val openedFiles = HashMap<String, DocumentFile>()
