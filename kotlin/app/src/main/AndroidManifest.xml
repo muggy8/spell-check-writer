@@ -19,7 +19,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SpellCheckWriter"
         tools:targetApi="31"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"
+        android:name="com.chaquo.python.android.PyApplication">
         <activity
             android:name=".MainActivity"
             android:exported="true"

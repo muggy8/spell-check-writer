@@ -1,0 +1,3 @@
+[submodule "kotlin/app/neuspell"]
+	path = kotlin/app/neuspell
+	url = https://github.com/neuspell/neuspell.git
